@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
@@ -19,9 +20,7 @@ const userSchema =  new mongoose.Schema ({
 
 //change after L2 encryption : added ...new mongoose.Schema({})... 
 
-const secret = "THisisnotaSecret.";
-
-userSchema.plugin(encrypt, {secret: secret, encryptedFields: ['password']});
+userSchema.plugin(encrypt, {secret: process.env.SECRET , encryptedFields: ['password']});
 //This should done before creating model..
 
 const User = new mongoose.model("User", userSchema);
