@@ -3,7 +3,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const ejs = require('ejs')
-const encrypt = require('mongoose-encryption')
+const bcrypt = require('bcrypt')
+const saltRounds = 10;
 
 const app = express();
 
@@ -20,8 +21,7 @@ const userSchema =  new mongoose.Schema ({
 
 //change after L2 encryption : added ...new mongoose.Schema({})... 
 
-userSchema.plugin(encrypt, {secret: process.env.SECRET , encryptedFields: ['password']});
-//This should done before creating model..
+
 
 const User = new mongoose.model("User", userSchema);
 
@@ -35,18 +35,23 @@ app.route("/register")
 })
 
 .post((req, res)=>{
-    const newUser = new User({
-        email: req.body.username,
-        password: req.body.password
-    })
 
-    newUser.save((err)=>{
-        if(err){
-            console.log(err);
-        } else {
-            res.render("secrets");
-        }
+    bcrypt.hash(req.body.password, saltRounds, (err, hash)=>{
+
+        const newUser = new User({
+            email: req.body.username,
+            password: hash
+        })
+    
+        newUser.save((err)=>{
+            if(err){
+                console.log(err);
+            } else {
+                res.render("secrets");
+            }
+        });
     });
+    
 });
 
 
@@ -58,19 +63,13 @@ app.route("/login")
 
 .post((req, res) => {
 
-    const password = req.body.password;
-
     User.findOne({email: req.body.username}, (err, foundUser)=>{
         if(!err){
-            if(foundUser){
-                if(foundUser.password === password)
-                {
-                    res.render("secrets");
+            bcrypt.compare(req.body.password, foundUser.password, (err, result) => {
+                if(result === true){
+                    res.render("secrets")
                 }
-                else {
-                    console.log("Wrong Credentials");
-                }
-            }
+            })
         }
         else {
             console.log(err);
